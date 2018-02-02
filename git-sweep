@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+# Removes local branches that don't exist on the remote
+
+# Okay, so what is this doing?
+# Well, `git branch -r | sed 's/^...*\///'` gets and trims all remote branches
+# `git branch | sed 's/^..//'` gets and trims all local branches
+# In bash, `<()` says "perform this operation and return the file descriptor of it"
+# `grep -Fxv -f [file1] [file2]` says "Use all the lines of file1 as a pattern and grep against file 2",
+# the -v flag inverses this and returns the lines in file2 that *don't* match.
+# We take this list and delete those branches locally with `xargs git branch -D`
+
+# Remove remote tracking for references that no longer exist on the remote
+git fetch --all --prune
+
+# If an argument is passed in (presumably something like -n) then treat this like a "dry-run"
+# We don't have any other arguments so this makes things simpler
+if [ ! -z "$1" ]; then
+    grep -Fxv -f <(git branch -r | sed 's/^...*\///') <(git branch | sed 's/^..//')
+    exit 0
+else
+    grep -Fxv -f <(git branch -r | sed 's/^...*\///') <(git branch | sed 's/^..//') | xargs git branch -D
+fi
